@@ -21,7 +21,11 @@
 
 class GlobalChat_Config : public WorldScript
 {
-public: GlobalChat_Config() : WorldScript("GlobalChat_Config") { };
+public:
+    GlobalChat_Config() : WorldScript("GlobalChat_Config",
+    {
+        WORLDHOOK_ON_BEFORE_CONFIG_LOAD
+    }) {}
 
     void OnAfterConfigLoad(bool reload) override
     {
@@ -32,9 +36,10 @@ public: GlobalChat_Config() : WorldScript("GlobalChat_Config") { };
 class GlobalChat_Player : public PlayerScript
 {
 public:
-    GlobalChat_Player() : PlayerScript("GlobalChat_Player") { }
+    //GlobalChat_Player() : PlayerScript("GlobalChat_Player") { }
+    GlobalChat_Player() : PlayerScript("GlobalChat_Player", { PLAYERHOOK_ON_LOGIN, PLAYERHOOK_ON_SAVE, PLAYERHOOK_ON_CHAT }) {}
 
-    void OnLogin(Player* player)
+    void OnPlayerLogin(Player* player) override
     {
         if (sGlobalChatMgr->GlobalChatEnabled)
         {
@@ -59,12 +64,13 @@ public:
         }
     }
 
-    void OnSave(Player* player)
+    void OnPlayerSave(Player* player) override
     {
         sGlobalChatMgr->SavePlayerData(player);
     }
 
-    void OnChat(Player* player, uint32 /*type*/, uint32 lang, std::string& msg, Channel* channel)
+    //void OnChat(Player* player, uint32 /*type*/, uint32 lang, std::string& msg, Channel* channel)
+    void OnPlayerChat(Player* player, uint32 /*type*/, uint32 lang, std::string& msg, Channel* channel) override
     {
         if (sGlobalChatMgr->JoinChannel && !sGlobalChatMgr->ChatName.empty() && lang != LANG_ADDON && !strcmp(channel->GetName().c_str(), sGlobalChatMgr->ChatName.c_str()))
         {

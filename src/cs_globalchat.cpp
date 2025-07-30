@@ -27,6 +27,7 @@ class globalchat_commandscript : public CommandScript
 public:
     globalchat_commandscript() : CommandScript("globalchat_commandscript") { }
 
+
     ChatCommandTable GetCommands() const override
     {
         static ChatCommandTable blacklistCommandTable =
@@ -112,7 +113,8 @@ public:
         }
 
         sGlobalChatMgr->GlobalChatEnabled = true;
-        sWorld->SendWorldText(LANG_GLOBALCHAT_STATE_ANNOUNCE_WORLD, playerName.c_str(), "enabled");
+        //sWorld->SendWorldText(LANG_GLOBALCHAT_STATE_ANNOUNCE_WORLD, playerName.c_str(), "enabled");
+        ChatHandler(nullptr).SendWorldText(LANG_GLOBALCHAT_STATE_ANNOUNCE_WORLD, playerName.c_str(), "enabled");
         LOG_INFO("module", "GlobalChat: Player {} enabled the GlobalChat.", playerName);
 
         return true;
@@ -134,7 +136,9 @@ public:
         }
 
         sGlobalChatMgr->GlobalChatEnabled = false;
-        sWorld->SendWorldText(LANG_GLOBALCHAT_STATE_ANNOUNCE_WORLD, playerName.c_str(), "disabled");
+        //sWorld->SendWorldText(LANG_GLOBALCHAT_STATE_ANNOUNCE_WORLD, playerName.c_str(), "disabled");
+        ChatHandler(nullptr).SendWorldText(LANG_GLOBALCHAT_STATE_ANNOUNCE_WORLD, playerName.c_str(), "disabled");
+
         LOG_INFO("module", "GlobalChat: Player {} disabled the GlobalChat.", playerName);
 
         return true;
@@ -187,12 +191,14 @@ public:
 
             if (sGlobalChatMgr->AnnounceMutes)
             {
-                sWorld->SendWorldText(LANG_GLOBALCHAT_PLAYER_BANNED_ANNOUNCE_WORLD, playerName.c_str(), target->GetName().c_str(), muteReasonStr.c_str());
+                //sWorld->SendWorldText(LANG_GLOBALCHAT_PLAYER_BANNED_ANNOUNCE_WORLD, playerName.c_str(), target->GetName().c_str(), muteReasonStr.c_str());
+                ChatHandler(nullptr).SendGMText(LANG_GLOBALCHAT_PLAYER_BANNED_ANNOUNCE_WORLD, playerName.c_str(), target->GetName().c_str(), muteReasonStr.c_str());
             }
             else
             {
                 ChatHandler(target->GetSession()).PSendSysMessage(LANG_GLOBALCHAT_BANNED_ANNOUNCE_SELF, muteReasonStr.c_str());
-                sWorld->SendGMText(LANG_GLOBALCHAT_PLAYER_BANNED_ANNOUNCE_WORLD, playerName.c_str(), target->GetName().c_str(), muteReasonStr.c_str());
+                //sWorld->SendGMText(LANG_GLOBALCHAT_PLAYER_BANNED_ANNOUNCE_WORLD, playerName.c_str(), target->GetName().c_str(), muteReasonStr.c_str());
+                ChatHandler(nullptr).SendGMText(LANG_GLOBALCHAT_PLAYER_BANNED_ANNOUNCE_WORLD, playerName.c_str(), target->GetName().c_str(), muteReasonStr.c_str());
             }
 
             return true;
@@ -204,12 +210,14 @@ public:
 
         if (sGlobalChatMgr->AnnounceMutes)
         {
-            sWorld->SendWorldText(LANG_GLOBALCHAT_PLAYER_MUTED_ANNOUNCE_WORLD, playerName.c_str(), target->GetName().c_str(), secsToTimeString(durationSecs, true).c_str(), muteReasonStr.c_str());
+            //sWorld->SendWorldText(LANG_GLOBALCHAT_PLAYER_MUTED_ANNOUNCE_WORLD, playerName.c_str(), target->GetName().c_str(), secsToTimeString(durationSecs, true).c_str(), muteReasonStr.c_str());
+            ChatHandler(nullptr).SendGMText(LANG_GLOBALCHAT_PLAYER_MUTED_ANNOUNCE_WORLD, playerName.c_str(), target->GetName().c_str(), secsToTimeString(durationSecs, true).c_str(), muteReasonStr.c_str());
         }
         else
         {
             ChatHandler(target->GetSession()).PSendSysMessage(LANG_GLOBALCHAT_MUTED_ANNOUNCE_SELF, secsToTimeString(durationSecs, true).c_str(), muteReasonStr.c_str());
-            sWorld->SendGMText(LANG_GLOBALCHAT_PLAYER_MUTED_ANNOUNCE_WORLD, playerName.c_str(), target->GetName().c_str(), secsToTimeString(durationSecs, true).c_str(), muteReasonStr.c_str());
+            //sWorld->SendGMText(LANG_GLOBALCHAT_PLAYER_MUTED_ANNOUNCE_WORLD, playerName.c_str(), target->GetName().c_str(), secsToTimeString(durationSecs, true).c_str(), muteReasonStr.c_str());
+            ChatHandler(nullptr).SendGMText(LANG_GLOBALCHAT_PLAYER_MUTED_ANNOUNCE_WORLD, playerName.c_str(), target->GetName().c_str(), secsToTimeString(durationSecs, true).c_str(), muteReasonStr.c_str());
         }
 
         return true;

@@ -23,6 +23,8 @@
 #include "GlobalChatMgr.h"
 #include "WorldSession.h"
 
+#include "WorldSessionMgr.h"
+
 DBCStorage<ChatProfanityEntry> sChatProfanityStore(ChatProfanityEntryfmt);
 
 GlobalChatMgr* GlobalChatMgr::instance()
@@ -644,24 +646,65 @@ void GlobalChatMgr::SendToPlayers(std::string chatMessage, Player* player, TeamI
     LOG_DEBUG("module", "GlobalChat: Sending Message to Players.");
     std::string chatPrefix = GetChatPrefix();
     std::string gmChatPrefix = GetGMChatPrefix(teamId);
-    SessionMap sessions = sWorld->GetAllSessions();
-    for (SessionMap::iterator itr = sessions.begin(); itr != sessions.end(); ++itr)
-    {
-        if (!itr->second || !itr->second->GetPlayer() || !itr->second->GetPlayer()->IsInWorld())
-        {
-            continue;
-        }
 
-        Player* target = itr->second->GetPlayer();
+    /*meu codigo */
+    //WorldSessionMgr::SessionMap sessions = sWorldSessionMgr->GetAllSessions();
+    //for (WorldSessionMgr::SessionMap::iterator itr = sessions.begin(); itr != sessions.end(); ++itr)
+    ///*Default:
+    //SessionMap sessions = sWorld->GetAllSessions();
+    //for (SessionMap::iterator itr = sessions.begin(); itr != sessions.end(); ++itr)*/
+    //{
+    //    if (!itr->second || !itr->second->GetPlayer() || !itr->second->GetPlayer()->IsInWorld())
+    //    {
+    //        continue;
+    //    }
+
+    //    Player* target = itr->second->GetPlayer();
+    //    ObjectGuid guid2 = target->GetGUID();
+    //    std::string message;
+
+    //    if (IsInChat(guid2))
+    //    {
+    //        if (FactionSpecific && teamId != TEAM_NEUTRAL && itr->second->GetSecurity() > 0)
+    //        {
+    //            message = gmChatPrefix + " " + chatMessage;
+    //            sWorldSessionMgr->SendServerMessage(SERVER_MSG_STRING, message.c_str(), target);
+    //            continue;
+    //        }
+
+    //        // Skip if receiver has sender on ignore
+    //        if (player && !SendIgnored && target->GetSocial()->HasIgnore(player->GetGUID()) && player->GetSession()->GetSecurity() == 0)
+    //            continue;
+
+    //        if (!FactionSpecific || teamId == TEAM_NEUTRAL || teamId == target->GetTeamId())
+    //        {
+    //            message = chatPrefix + " " + chatMessage;
+    //            sWorldSessionMgr->SendServerMessage(SERVER_MSG_STRING, message.c_str(), target);
+    //        }
+    //    }
+    //}
+
+    /* que achei no github */
+    auto const& sessions = sWorldSessionMgr->GetAllSessions();
+    for (auto const& itr : sessions)
+    {
+        WorldSession* session = itr.second;
+        if (!session)
+            continue;
+
+        Player* target = session->GetPlayer();
+        if (!target || !target->IsInWorld())
+            continue;
+
         ObjectGuid guid2 = target->GetGUID();
         std::string message;
 
         if (IsInChat(guid2))
         {
-            if (FactionSpecific && teamId != TEAM_NEUTRAL && itr->second->GetSecurity() > 0)
+            if (FactionSpecific && teamId != TEAM_NEUTRAL && session->GetSecurity() > 0)
             {
                 message = gmChatPrefix + " " + chatMessage;
-                sWorld->SendServerMessage(SERVER_MSG_STRING, message.c_str(), target);
+                ChatHandler(target->GetSession()).SendSysMessage(message.c_str());
                 continue;
             }
 
@@ -672,7 +715,7 @@ void GlobalChatMgr::SendToPlayers(std::string chatMessage, Player* player, TeamI
             if (!FactionSpecific || teamId == TEAM_NEUTRAL || teamId == target->GetTeamId())
             {
                 message = chatPrefix + " " + chatMessage;
-                sWorld->SendServerMessage(SERVER_MSG_STRING, message.c_str(), target);
+                ChatHandler(target->GetSession()).SendSysMessage(message.c_str());
             }
         }
     }
@@ -735,7 +778,7 @@ void GlobalChatMgr::SendGlobalChat(WorldSession* session, const char* message, T
             muteLeft = playersChatData[guid].GetMuteTime() - GameTime::GetGameTime().count();
         }
 
-        ChatHandler(session).PSendSysMessage("|cffff0000You can't use the GlobalChat while muted.|r You need to wait another %s.", secsToTimeString(muteLeft));
+        ChatHandler(session).PSendSysMessage("|cffff0000You can't use the GlobalChat while muted.|r You need to wait another {}.", secsToTimeString(muteLeft));
         return;
     }
 
@@ -769,9 +812,9 @@ void GlobalChatMgr::SendGlobalChat(WorldSession* session, const char* message, T
         {
             if (ProfanityMute > 0)
             {
-                sWorld->SendGMText(LANG_FORBIDDEN_PHRASE_ANNOUNCE_GM, playerName, message); // send report to GMs
+                ChatHandler(nullptr).SendGMText(LANG_FORBIDDEN_PHRASE_ANNOUNCE_GM, playerName, message); // send report to GMs
                 LOG_INFO("module", "GlobalChat: Player {} got muted for {} for posting a forbidden message.", player->GetName(), secsToTimeString(ProfanityMute));
-                ChatHandler(session).PSendSysMessage("Your message contains a forbidden phrase. You have been muted for %s.", secsToTimeString(ProfanityMute));
+                ChatHandler(session).PSendSysMessage("Your message contains a forbidden phrase. You have been muted for {}.", secsToTimeString(ProfanityMute));
 
                 if (ProfanityMuteType >= 1)
                 {
@@ -788,7 +831,7 @@ void GlobalChatMgr::SendGlobalChat(WorldSession* session, const char* message, T
             }
             else
             {
-                sWorld->SendGMText(LANG_FORBIDDEN_PHRASE_ANNOUNCE_GM, playerName, message); // send report to GMs
+                ChatHandler(nullptr).SendGMText(LANG_FORBIDDEN_PHRASE_ANNOUNCE_GM, playerName, message); // send report to GMs
                 LOG_INFO("module", "GlobalChat: Player {} tried posting a forbidden message.", player->GetName());
                 ChatHandler(session).PSendSysMessage("Your message contains a forbidden phrase.");
             }
@@ -815,9 +858,9 @@ void GlobalChatMgr::SendGlobalChat(WorldSession* session, const char* message, T
         {
             if (URLMute > 0)
             {
-                sWorld->SendGMText(LANG_FORBIDDEN_URL_ANNOUNCE_GM, playerName, message); // send passive report to GMs
+                ChatHandler(nullptr).SendGMText(LANG_FORBIDDEN_URL_ANNOUNCE_GM, playerName, message); // send passive report to GMs
                 LOG_INFO("module", "GlobalChat: Player {} got muted for {} for posting a forbidden URL.", player->GetName(), secsToTimeString(URLMute));
-                ChatHandler(session).PSendSysMessage("Urls are not allowed. You have been muted for %s.", secsToTimeString(URLMute));
+                ChatHandler(session).PSendSysMessage("Urls are not allowed. You have been muted for {}.", secsToTimeString(URLMute));
 
                 if (URLMuteType >= 1)
                 {
@@ -834,7 +877,7 @@ void GlobalChatMgr::SendGlobalChat(WorldSession* session, const char* message, T
             }
             else
             {
-                sWorld->SendGMText(LANG_FORBIDDEN_URL_ANNOUNCE_GM, playerName, message); // send passive report to GMs
+                ChatHandler(nullptr).SendGMText(LANG_FORBIDDEN_URL_ANNOUNCE_GM, playerName, message); // send passive report to GMs
                 LOG_INFO("module", "GlobalChat: Player {} tried posting a forbidden URL.", player->GetName());
                 ChatHandler(session).PSendSysMessage("Urls are not allowed.");
                 return;
@@ -848,7 +891,8 @@ void GlobalChatMgr::SendGlobalChat(WorldSession* session, const char* message, T
     {
         std::string adStr = secsToTimeString(MinPlayTime - player->GetTotalPlayedTime());
         std::string minTime = secsToTimeString(MinPlayTime);
-        session->SendNotification("You must have played at least %s to use the GlobalChat. %s remaining.", minTime.c_str(), adStr.c_str());
+        //ChatHandler(session).SendNotification("You must have played at least %s to use the GlobalChat. %s remaining.", minTime.c_str(), adStr.c_str());
+        ChatHandler(session).SendNotification("You must have played at least {} to use the GlobalChat. {} remaining.", minTime.c_str(), adStr.c_str());
         return;
     }
 
@@ -921,8 +965,8 @@ void GlobalChatMgr::PlayerInfoCommand(ChatHandler* handler, Player* player)
     bool isMuted = muteTime > GameTime::GetGameTime().count();
     std::string lastMsgStr = Acore::Time::TimeToTimestampStr(Seconds(lastMessage));
 
-    handler->PSendSysMessage("GlobalChat information about player |cff4CFF00%s|r", player->GetName().c_str());
-    handler->PSendSysMessage("> In Chat: %s || Last Message: %s ", inChat ? "|cff4CFF00Yes|r" : "|cffFF0000No|r", lastMessage ? ("|cff4CFF00" + lastMsgStr + "|r") : "|cffFF0000Never|r");
-    handler->PSendSysMessage("> Muted: %s || Mute Time: %s", isMuted ? "|cffFF0000Yes|r" : "|cff4CFF00No|r", isMuted ? ("|cffFF0000" + secsToTimeString(muteTime - GameTime::GetGameTime().count(), true) + "|r") : "|cff4CFF000s|r");
-    handler->PSendSysMessage("> Total Mutes: %s%u|r || Banned: %s", totalMutes > 0 ? "|cffFF0000" : "|cff4CFF00", totalMutes, isBanned ? "|cffFF0000Yes|r" : "|cff4CFF00No|r");
+    handler->PSendSysMessage("GlobalChat information about player |cff4CFF00{}|r", player->GetName().c_str());
+    handler->PSendSysMessage("> In Chat: {} || Last Message: {} ", inChat ? "|cff4CFF00Yes|r" : "|cffFF0000No|r", lastMessage ? ("|cff4CFF00" + lastMsgStr + "|r") : "|cffFF0000Never|r");
+    handler->PSendSysMessage("> Muted: {} || Mute Time: {}", isMuted ? "|cffFF0000Yes|r" : "|cff4CFF00No|r", isMuted ? ("|cffFF0000" + secsToTimeString(muteTime - GameTime::GetGameTime().count(), true) + "|r") : "|cff4CFF000s|r");
+    handler->PSendSysMessage("> Total Mutes: {}{}|r || Banned: {}", totalMutes > 0 ? "|cffFF0000" : "|cff4CFF00", totalMutes, isBanned ? "|cffFF0000Yes|r" : "|cff4CFF00No|r");
 }

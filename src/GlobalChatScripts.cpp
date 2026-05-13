@@ -21,7 +21,8 @@
 
 class GlobalChat_Config : public WorldScript
 {
-public: GlobalChat_Config() : WorldScript("GlobalChat_Config") { };
+public:
+    GlobalChat_Config() : WorldScript("GlobalChat_Config", { WORLDHOOK_ON_AFTER_CONFIG_LOAD }) {}
 
     void OnAfterConfigLoad(bool reload) override
     {
@@ -32,9 +33,9 @@ public: GlobalChat_Config() : WorldScript("GlobalChat_Config") { };
 class GlobalChat_Player : public PlayerScript
 {
 public:
-    GlobalChat_Player() : PlayerScript("GlobalChat_Player") { }
+    GlobalChat_Player() : PlayerScript("GlobalChat_Player", { PLAYERHOOK_ON_LOGIN, PLAYERHOOK_ON_SAVE, PLAYERHOOK_CAN_PLAYER_USE_CHAT }) {} // PLAYERHOOK_ON_BEFORE_SEND_CHAT_MESSAGE
 
-    void OnLogin(Player* player)
+    void OnPlayerLogin(Player* player) override
     {
         if (sGlobalChatMgr->GlobalChatEnabled)
         {
@@ -49,7 +50,7 @@ public:
             {
                 if (sGlobalChatMgr->JoinChannel && !sGlobalChatMgr->ChatName.empty())
                 {
-                    ChatHandler(player->GetSession()).PSendSysMessage("You can join the |cffFF0000GlobalChat|r by typing |cffFF0000.joinglobal|r or |cffFF0000/join %s|r at any time.", sGlobalChatMgr->ChatName.c_str());
+                    ChatHandler(player->GetSession()).PSendSysMessage("You can join the |cffFF0000GlobalChat|r by typing |cffFF0000.joinglobal|r or |cffFF0000/join {}|r at any time.", sGlobalChatMgr->ChatName.c_str());
                 }
                 else
                 {
@@ -59,25 +60,27 @@ public:
         }
     }
 
-    void OnSave(Player* player)
+    void OnPlayerSave(Player* player) override
     {
         sGlobalChatMgr->SavePlayerData(player);
     }
 
-    void OnChat(Player* player, uint32 /*type*/, uint32 lang, std::string& msg, Channel* channel)
+    [[nodiscard]] bool OnPlayerCanUseChat(Player* player, uint32 /*type*/, uint32 language, std::string& msg, Channel* channel) override
     {
-        if (sGlobalChatMgr->JoinChannel && !sGlobalChatMgr->ChatName.empty() && lang != LANG_ADDON && !strcmp(channel->GetName().c_str(), sGlobalChatMgr->ChatName.c_str()))
-        {
-            if (sGlobalChatMgr->FactionSpecific && player->GetSession()->GetSecurity() > 0)
-            {
-                ChatHandler(player->GetSession()).PSendSysMessage("Please use |cff4CFF00.galliance|r or .|cff4CFF00ghorde|r for the GlobalChat as GM.");
-                msg = -1;
-                return;
-            }
+        if (!channel || !sGlobalChatMgr->JoinChannel || sGlobalChatMgr->ChatName.empty() || language == LANG_ADDON)
+            return true;
 
-            sGlobalChatMgr->SendGlobalChat(player->GetSession(), msg.c_str());
-            msg = -1;
+        if (channel->GetName() != sGlobalChatMgr->ChatName)
+            return true;
+
+        if (sGlobalChatMgr->FactionSpecific && player->GetSession()->GetSecurity() > 0)
+        {
+            ChatHandler(player->GetSession()).PSendSysMessage("Please use |cff4CFF00.galliance|r or |cff4CFF00.ghorde|r for the GlobalChat as GM.");
+            return false;
         }
+
+        sGlobalChatMgr->SendGlobalChat(player->GetSession(), msg.c_str());
+        return false;
     }
 };
 

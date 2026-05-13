@@ -112,7 +112,7 @@ public:
         }
 
         sGlobalChatMgr->GlobalChatEnabled = true;
-        sWorld->SendWorldText(LANG_GLOBALCHAT_STATE_ANNOUNCE_WORLD, playerName.c_str(), "enabled");
+        ChatHandler(nullptr).SendWorldText(LANG_GLOBALCHAT_STATE_ANNOUNCE_WORLD, playerName.c_str(), "enabled");
         LOG_INFO("module", "GlobalChat: Player {} enabled the GlobalChat.", playerName);
 
         return true;
@@ -134,7 +134,7 @@ public:
         }
 
         sGlobalChatMgr->GlobalChatEnabled = false;
-        sWorld->SendWorldText(LANG_GLOBALCHAT_STATE_ANNOUNCE_WORLD, playerName.c_str(), "disabled");
+        ChatHandler(nullptr).SendWorldText(LANG_GLOBALCHAT_STATE_ANNOUNCE_WORLD, playerName.c_str(), "disabled");
         LOG_INFO("module", "GlobalChat: Player {} disabled the GlobalChat.", playerName);
 
         return true;
@@ -187,12 +187,12 @@ public:
 
             if (sGlobalChatMgr->AnnounceMutes)
             {
-                sWorld->SendWorldText(LANG_GLOBALCHAT_PLAYER_BANNED_ANNOUNCE_WORLD, playerName.c_str(), target->GetName().c_str(), muteReasonStr.c_str());
+                ChatHandler(nullptr).SendWorldText(LANG_GLOBALCHAT_PLAYER_BANNED_ANNOUNCE_WORLD, playerName.c_str(), target->GetName().c_str(), muteReasonStr.c_str());
             }
             else
             {
                 ChatHandler(target->GetSession()).PSendSysMessage(LANG_GLOBALCHAT_BANNED_ANNOUNCE_SELF, muteReasonStr.c_str());
-                sWorld->SendGMText(LANG_GLOBALCHAT_PLAYER_BANNED_ANNOUNCE_WORLD, playerName.c_str(), target->GetName().c_str(), muteReasonStr.c_str());
+                ChatHandler(nullptr).SendGMText(LANG_GLOBALCHAT_PLAYER_BANNED_ANNOUNCE_WORLD, playerName.c_str(), target->GetName().c_str(), muteReasonStr.c_str());
             }
 
             return true;
@@ -204,12 +204,12 @@ public:
 
         if (sGlobalChatMgr->AnnounceMutes)
         {
-            sWorld->SendWorldText(LANG_GLOBALCHAT_PLAYER_MUTED_ANNOUNCE_WORLD, playerName.c_str(), target->GetName().c_str(), secsToTimeString(durationSecs, true).c_str(), muteReasonStr.c_str());
+            ChatHandler(nullptr).SendWorldText(LANG_GLOBALCHAT_PLAYER_MUTED_ANNOUNCE_WORLD, playerName.c_str(), target->GetName().c_str(), secsToTimeString(durationSecs, true).c_str(), muteReasonStr.c_str());
         }
         else
         {
             ChatHandler(target->GetSession()).PSendSysMessage(LANG_GLOBALCHAT_MUTED_ANNOUNCE_SELF, secsToTimeString(durationSecs, true).c_str(), muteReasonStr.c_str());
-            sWorld->SendGMText(LANG_GLOBALCHAT_PLAYER_MUTED_ANNOUNCE_WORLD, playerName.c_str(), target->GetName().c_str(), secsToTimeString(durationSecs, true).c_str(), muteReasonStr.c_str());
+            ChatHandler(nullptr).SendGMText(LANG_GLOBALCHAT_PLAYER_MUTED_ANNOUNCE_WORLD, playerName.c_str(), target->GetName().c_str(), secsToTimeString(durationSecs, true).c_str(), muteReasonStr.c_str());
         }
 
         return true;
@@ -258,7 +258,8 @@ public:
         if (phrase.empty())
             return false;
 
-        QueryResult check = CharacterDatabase.Query("SELECT * FROM `globalchat_blacklist` WHERE `phrase` = '{}'", phrase);
+        std::string phraseStr{ phrase };
+        QueryResult check = CharacterDatabase.Query("SELECT * FROM `globalchat_blacklist` WHERE `phrase` = '{}'", phraseStr);
         if (check)
         {
             handler->SendSysMessage("Phrase is already blacklisted.");
@@ -266,10 +267,10 @@ public:
             return true;
         }
 
-        CharacterDatabase.Query("INSERT INTO `globalchat_blacklist` VALUES ('{}')", phrase);
-        sGlobalChatMgr->ProfanityBlacklist[phrase.data()] = std::regex{phrase.data(), std::regex::icase | std::regex::optimize};
-        handler->PSendSysMessage("Phrase '%s' is now blacklisted in the GlobalChat.", phrase);
-        LOG_INFO("module", "GlobalChat: Phrase '{}' is now blacklisted.", phrase);
+        CharacterDatabase.Query("INSERT INTO `globalchat_blacklist` VALUES ('{}')", phraseStr);
+        sGlobalChatMgr->ProfanityBlacklist[phraseStr] = std::regex{phraseStr, std::regex::icase | std::regex::optimize};
+        handler->PSendSysMessage("Phrase '{}' is now blacklisted in the GlobalChat.", phraseStr.c_str());
+        LOG_INFO("module", "GlobalChat: Phrase '{}' is now blacklisted.", phraseStr);
 
         return true;
     };
@@ -279,7 +280,8 @@ public:
         if (phrase.empty())
             return false;
 
-        QueryResult check = CharacterDatabase.Query("SELECT * FROM `globalchat_blacklist` WHERE `phrase` = '{}'", phrase);
+        std::string phraseStr{ phrase };
+        QueryResult check = CharacterDatabase.Query("SELECT * FROM `globalchat_blacklist` WHERE `phrase` = '{}'", phraseStr);
         if (!check)
         {
             handler->SendSysMessage("Phrase is not blacklisted.");
@@ -287,10 +289,10 @@ public:
             return true;
         }
 
-        CharacterDatabase.Query("DELETE FROM `globalchat_blacklist` WHERE `phrase` = '{}'", phrase);
-        sGlobalChatMgr->ProfanityBlacklist.erase(phrase.data());
-        handler->PSendSysMessage("Phrase '%s' is no longer blacklisted in the GlobalChat.", phrase);
-        LOG_INFO("module", "GlobalChat: Phrase '{}' is no longer blacklisted.", phrase);
+        CharacterDatabase.Query("DELETE FROM `globalchat_blacklist` WHERE `phrase` = '{}'", phraseStr);
+        sGlobalChatMgr->ProfanityBlacklist.erase(phraseStr);
+        handler->PSendSysMessage("Phrase '{}' is no longer blacklisted in the GlobalChat.", phraseStr.c_str());
+        LOG_INFO("module", "GlobalChat: Phrase '{}' is no longer blacklisted.", phraseStr);
 
         return true;
     };

@@ -14,7 +14,7 @@ GlobalChat.Enable = 1
 #        Default:     1 - (Enabled)
 #                     0 - (Disabled)
 
-GlobalChat.Announce = 1
+GlobalChat.Announce = 0
 
 #
 #    GlobalChat.Chat.Name
@@ -23,6 +23,24 @@ GlobalChat.Announce = 1
 #
 
 GlobalChat.Chat.Name = "Global"
+
+#
+#    GlobalChat.OnFirstLogin
+#        Description: Enable GlobalChat by default on first character login
+#        Default:     1	- (Enabled)
+#                     0	- (Disabled)
+#
+
+GlobalChat.OnFirstLogin = 1
+
+#
+#    GlobalChat.PlayTimeToChat
+#        Description: Sets PlayTime until GlobalChat can be used
+#        Default:     300 - (seconds)
+#                     0   - (Disabled)
+#
+
+GlobalChat.PlayTimeToChat = 300
 
 #
 #    GlobalChat.Chat.NameColor
@@ -111,24 +129,6 @@ GlobalChat.GM.Badge = 1
 #
 
 GlobalChat.FactionSpecific = 0
-
-#
-#    GlobalChat.OnFirstLogin
-#        Description: Enable GlobalChat by default on first character login
-#        Default:     1	- (Enabled)
-#                     0	- (Disabled)
-#
-
-GlobalChat.OnFirstLogin = 1
-
-#
-#    GlobalChat.PlayTimeToChat
-#        Description: Sets PlayTime until GlobalChat can be used
-#        Default:     300 - (seconds)
-#                     0   - (Disabled)
-#
-
-GlobalChat.PlayTimeToChat = 300
 
 #
 #    GlobalChat.CoolDown
